@@ -1,0 +1,42 @@
+---
+# Deploy OpenOctopus containers
+
+- name: Create system user
+  ansible.builtin.include_tasks: user.yml
+  tags: [openoctopus, user]
+
+- name: Generate configuration
+  ansible.builtin.include_tasks: config.yml
+  tags: [openoctopus, config]
+
+- name: Template docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ openoctopus_home }}/docker-compose.yml"
+    owner: "{{ openoctopus_user }}"
+    group: "{{ openoctopus_user }}"
+    mode: "0640"
+  notify: Restart openoctopus
+  tags: [openoctopus, compose]
+
+- name: Pull Docker images
+  community.docker.docker_compose_v2_pull:
+    project_src: "{{ openoctopus_home }}"
+  tags: [openoctopus, pull]
+
+- name: Start containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ openoctopus_home }}"
+    state: present
+  tags: [openoctopus, start]
+
+- name: Wait for gateway health check
+  ansible.builtin.uri:
+    url: "http://localhost:{{ openoctopus_http_port }}/healthz"
+    method: GET
+    status_code: 200
+  register: healthcheck
+  retries: 12
+  delay: 5
+  until: healthcheck.status == 200
+  tags: [openoctopus, health]

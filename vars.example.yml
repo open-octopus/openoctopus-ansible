@@ -1,0 +1,74 @@
+---
+# OpenOctopus deployment variables
+# Copy this file to vars.yml and fill in your values.
+
+# ------------------------------------------------------------------------------
+# OpenOctopus settings
+# ------------------------------------------------------------------------------
+
+# Docker image tag to deploy
+openoctopus_version: "latest"
+
+# System user that runs OpenOctopus
+openoctopus_user: "octopus"
+
+# Installation directory
+openoctopus_home: "/opt/openoctopus"
+
+# Data directory (SQLite database, JSONL sessions)
+openoctopus_data_dir: "/opt/openoctopus/data"
+
+# Gateway ports
+openoctopus_ws_port: 19789     # WebSocket RPC (primary)
+openoctopus_http_port: 19790   # HTTP REST bridge
+
+# ------------------------------------------------------------------------------
+# LLM Provider API keys
+# At least one provider is required.
+# ------------------------------------------------------------------------------
+
+# Anthropic (required — primary provider)
+anthropic_api_key: ""
+
+# OpenAI (optional — failover provider)
+openai_api_key: ""
+
+# Google AI (optional — failover provider)
+google_api_key: ""
+
+# Ollama (optional — local LLM, set URL if running Ollama)
+ollama_url: ""
+
+# ------------------------------------------------------------------------------
+# Tailscale VPN
+# Provides secure remote access without exposing ports to the internet.
+# Get an auth key at: https://login.tailscale.com/admin/settings/keys
+# ------------------------------------------------------------------------------
+
+# Tailscale auth key (required to enable Tailscale role)
+tailscale_auth_key: ""
+
+# ------------------------------------------------------------------------------
+# Backup settings
+# ------------------------------------------------------------------------------
+
+# Enable automated backups via cron
+backup_enabled: true
+
+# Cron schedule (default: 3:00 AM daily)
+backup_cron_hour: "3"
+backup_cron_minute: "0"
+
+# Number of days to keep local backups
+backup_retention_days: 30
+
+# S3 remote backup (optional)
+backup_s3_enabled: false
+backup_s3_bucket: ""
+
+# ------------------------------------------------------------------------------
+# Firewall
+# ------------------------------------------------------------------------------
+
+# SSH port (change if you use a non-standard port)
+ufw_ssh_port: 22

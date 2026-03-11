@@ -1,0 +1,5 @@
+---
+# Tailscale role defaults
+
+tailscale_version: "latest"
+tailscale_auth_key: ""

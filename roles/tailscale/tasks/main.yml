@@ -1,0 +1,54 @@
+---
+# Install and authenticate Tailscale
+
+- name: Install Tailscale via official script
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://tailscale.com/install.sh | sh
+    creates: /usr/bin/tailscale
+  tags: [tailscale, install]
+
+- name: Enable IP forwarding (IPv4)
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+  tags: [tailscale, network]
+
+- name: Enable IP forwarding (IPv6)
+  ansible.posix.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+  tags: [tailscale, network]
+
+- name: Ensure Tailscale service is started and enabled
+  ansible.builtin.systemd:
+    name: tailscaled
+    state: started
+    enabled: true
+  tags: [tailscale]
+
+- name: Authenticate Tailscale
+  ansible.builtin.command:
+    cmd: tailscale up --authkey={{ tailscale_auth_key }} --accept-routes
+  register: tailscale_up
+  changed_when: "'Success' in tailscale_up.stdout or tailscale_up.rc == 0"
+  when: tailscale_auth_key | default('') | length > 0
+  notify: Restart tailscale
+  tags: [tailscale, auth]
+
+- name: Get Tailscale status
+  ansible.builtin.command:
+    cmd: tailscale status
+  register: tailscale_status
+  changed_when: false
+  tags: [tailscale]
+
+- name: Show Tailscale status
+  ansible.builtin.debug:
+    msg: "{{ tailscale_status.stdout_lines }}"
+  tags: [tailscale]

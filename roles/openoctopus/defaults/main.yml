@@ -1,0 +1,22 @@
+---
+# OpenOctopus role defaults
+
+openoctopus_version: "latest"
+openoctopus_user: "octopus"
+openoctopus_home: "/opt/openoctopus"
+openoctopus_data_dir: "/opt/openoctopus/data"
+openoctopus_config_dir: "/opt/openoctopus/config"
+openoctopus_sessions_dir: "/opt/openoctopus/data/sessions"
+
+# Gateway ports
+openoctopus_ws_port: 19789
+openoctopus_http_port: 19790
+
+# Docker image
+openoctopus_image: "ghcr.io/open-octopus/openoctopus"
+
+# LLM provider keys (override in vars.yml)
+anthropic_api_key: ""
+openai_api_key: ""
+google_api_key: ""
+ollama_url: ""

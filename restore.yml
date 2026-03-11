@@ -1,0 +1,43 @@
+---
+# OpenOctopus — Restore playbook
+#
+# Restores SQLite database and JSONL sessions from a backup archive.
+#
+# Usage:
+#   ansible-playbook restore.yml -i inventory.yml -e @vars.yml -e backup_file=/path/to/backup.tar.gz
+
+- name: Restore OpenOctopus from backup
+  hosts: octopus
+  become: true
+  vars_files:
+    - vars.example.yml
+
+  pre_tasks:
+    - name: Validate backup_file is provided
+      ansible.builtin.assert:
+        that:
+          - backup_file is defined
+          - backup_file | length > 0
+        fail_msg: >-
+          You must specify the backup file path.
+          Usage: ansible-playbook restore.yml -e backup_file=/path/to/backup.tar.gz
+      tags: [always]
+
+    - name: Check backup file exists
+      ansible.builtin.stat:
+        path: "{{ backup_file }}"
+      register: backup_stat
+      tags: [always]
+
+    - name: Fail if backup file not found
+      ansible.builtin.fail:
+        msg: "Backup file not found: {{ backup_file }}"
+      when: not backup_stat.stat.exists
+      tags: [always]
+
+  tasks:
+    - name: Include restore tasks
+      ansible.builtin.include_role:
+        name: backup
+        tasks_from: restore
+      tags: [restore]

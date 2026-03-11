@@ -1,0 +1,38 @@
+---
+# SQLite + JSONL backup setup
+
+- name: Create backup directory
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    owner: "{{ openoctopus_user }}"
+    group: "{{ openoctopus_user }}"
+    mode: "0750"
+  tags: [backup]
+
+- name: Template backup script
+  ansible.builtin.template:
+    src: backup.sh.j2
+    dest: "{{ openoctopus_home }}/backup.sh"
+    owner: "{{ openoctopus_user }}"
+    group: "{{ openoctopus_user }}"
+    mode: "0750"
+  tags: [backup]
+
+- name: Set up backup cron job
+  ansible.builtin.cron:
+    name: "OpenOctopus daily backup"
+    hour: "{{ backup_cron_hour }}"
+    minute: "{{ backup_cron_minute }}"
+    user: "{{ openoctopus_user }}"
+    job: "{{ openoctopus_home }}/backup.sh >> {{ backup_dir }}/backup.log 2>&1"
+    state: present
+  when: backup_enabled | bool
+  tags: [backup, cron]
+
+- name: Install awscli for S3 backups
+  ansible.builtin.apt:
+    name: awscli
+    state: present
+  when: backup_s3_enabled | bool
+  tags: [backup, s3]

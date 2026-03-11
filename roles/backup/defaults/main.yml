@@ -1,0 +1,12 @@
+---
+# Backup role defaults
+
+backup_dir: "/opt/openoctopus/backups"
+backup_retention_days: 30
+backup_enabled: true
+backup_cron_hour: "3"
+backup_cron_minute: "0"
+
+# S3 remote backup (optional)
+backup_s3_enabled: false
+backup_s3_bucket: ""

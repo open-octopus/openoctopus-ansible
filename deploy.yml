@@ -1,0 +1,65 @@
+---
+# OpenOctopus — Full deployment playbook
+#
+# Usage:
+#   ansible-playbook deploy.yml -i inventory.yml -e @vars.yml
+#   ansible-playbook deploy.yml -i inventory.yml -e @vars.yml --check --diff
+
+- name: Deploy OpenOctopus
+  hosts: octopus
+  become: true
+  vars_files:
+    - vars.example.yml
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - anthropic_api_key | default('') | length > 0 or
+            openai_api_key | default('') | length > 0 or
+            google_api_key | default('') | length > 0 or
+            ollama_url | default('') | length > 0
+        fail_msg: >-
+          At least one LLM provider must be configured.
+          Set anthropic_api_key, openai_api_key, google_api_key, or ollama_url.
+      tags: [always]
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      tags: [setup]
+
+  roles:
+    - role: docker
+      tags: [docker]
+
+    - role: openoctopus
+      tags: [openoctopus]
+
+    - role: tailscale
+      when: tailscale_auth_key | default('') | length > 0
+      tags: [tailscale]
+
+    - role: firewall
+      tags: [firewall]
+
+    - role: backup
+      when: backup_enabled | default(true) | bool
+      tags: [backup]
+
+  post_tasks:
+    - name: Deployment summary
+      ansible.builtin.debug:
+        msg: |
+          OpenOctopus deployed successfully.
+
+          Gateway endpoints:
+            WebSocket RPC : ws://{{ ansible_host }}:{{ openoctopus_ws_port | default(19789) }}
+            HTTP REST     : http://{{ ansible_host }}:{{ openoctopus_http_port | default(19790) }}
+            Health check  : http://{{ ansible_host }}:{{ openoctopus_http_port | default(19790) }}/healthz
+
+          Data directory  : {{ openoctopus_data_dir | default('/opt/openoctopus/data') }}
+          Backup enabled  : {{ backup_enabled | default(true) }}
+          Tailscale       : {{ 'enabled' if (tailscale_auth_key | default('') | length > 0) else 'disabled' }}
+      tags: [always]

@@ -1,0 +1,21 @@
+---
+# Docker role defaults
+
+docker_edition: "ce"
+docker_compose_version: "v2"
+
+# Packages to install alongside Docker
+docker_packages:
+  - "docker-{{ docker_edition }}"
+  - "docker-{{ docker_edition }}-cli"
+  - "containerd.io"
+  - "docker-buildx-plugin"
+  - "docker-compose-plugin"
+
+# Prerequisites
+docker_prerequisites:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release

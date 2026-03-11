@@ -1,0 +1,41 @@
+---
+# OpenOctopus — Manual backup playbook
+#
+# Triggers an immediate backup of SQLite database and JSONL sessions.
+#
+# Usage:
+#   ansible-playbook backup.yml -i inventory.yml -e @vars.yml
+
+- name: Backup OpenOctopus
+  hosts: octopus
+  become: true
+  vars_files:
+    - vars.example.yml
+
+  tasks:
+    - name: Run backup script
+      ansible.builtin.command:
+        cmd: "{{ openoctopus_home | default('/opt/openoctopus') }}/backup.sh"
+      register: backup_result
+      changed_when: backup_result.rc == 0
+      tags: [backup]
+
+    - name: List recent backups
+      ansible.builtin.find:
+        paths: "{{ backup_dir | default('/opt/openoctopus/backups') }}"
+        patterns: "openoctopus-backup-*.tar.gz"
+        age: "-7d"
+      register: recent_backups
+      tags: [backup]
+
+    - name: Backup result
+      ansible.builtin.debug:
+        msg: |
+          Backup completed.
+          Output: {{ backup_result.stdout }}
+          Backup directory: {{ backup_dir | default('/opt/openoctopus/backups') }}
+          Recent backups (last 7 days):
+          {% for f in recent_backups.files | sort(attribute='mtime', reverse=true) %}
+            - {{ f.path }} ({{ f.size | human_readable }})
+          {% endfor %}
+      tags: [backup]

@@ -1,0 +1,12 @@
+---
+# Generate OpenOctopus config.json5
+
+- name: Template config.json5
+  ansible.builtin.template:
+    src: config.json5.j2
+    dest: "{{ openoctopus_config_dir }}/config.json5"
+    owner: "{{ openoctopus_user }}"
+    group: "{{ openoctopus_user }}"
+    mode: "0600"
+  notify: Restart openoctopus
+  tags: [openoctopus, config]

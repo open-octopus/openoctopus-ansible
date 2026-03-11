@@ -1,0 +1,25 @@
+---
+# Fail2ban — SSH brute-force protection
+
+- name: Install fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
+    state: present
+  tags: [firewall, fail2ban]
+
+- name: Template jail.local configuration
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart fail2ban
+  tags: [firewall, fail2ban]
+
+- name: Ensure fail2ban service is started and enabled
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true
+  tags: [firewall, fail2ban]

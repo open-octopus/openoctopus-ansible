@@ -1,0 +1,44 @@
+---
+# OpenOctopus — Update playbook
+#
+# Pulls the latest Docker images and restarts containers.
+#
+# Usage:
+#   ansible-playbook update.yml -i inventory.yml -e @vars.yml
+#   ansible-playbook update.yml -i inventory.yml -e @vars.yml -e openoctopus_version=2026.3.11
+
+- name: Update OpenOctopus
+  hosts: octopus
+  become: true
+  vars_files:
+    - vars.example.yml
+
+  tasks:
+    - name: Pull latest Docker images
+      community.docker.docker_compose_v2_pull:
+        project_src: "{{ openoctopus_home | default('/opt/openoctopus') }}"
+      tags: [update]
+
+    - name: Restart containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ openoctopus_home | default('/opt/openoctopus') }}"
+        state: restarted
+      tags: [update]
+
+    - name: Wait for gateway health check
+      ansible.builtin.uri:
+        url: "http://localhost:{{ openoctopus_http_port | default(19790) }}/healthz"
+        method: GET
+        status_code: 200
+      register: healthcheck
+      retries: 12
+      delay: 5
+      until: healthcheck.status == 200
+      tags: [update]
+
+    - name: Update result
+      ansible.builtin.debug:
+        msg: >-
+          OpenOctopus updated and healthy.
+          Health check: {{ healthcheck.status }}
+      tags: [update]

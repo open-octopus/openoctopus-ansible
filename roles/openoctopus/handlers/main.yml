@@ -1,0 +1,7 @@
+---
+# OpenOctopus handlers
+
+- name: Restart openoctopus
+  community.docker.docker_compose_v2:
+    project_src: "{{ openoctopus_home }}"
+    state: restarted

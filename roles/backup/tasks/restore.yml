@@ -1,0 +1,88 @@
+---
+# Restore OpenOctopus from backup
+
+- name: Validate backup file exists
+  ansible.builtin.stat:
+    path: "{{ backup_file }}"
+  register: restore_backup_stat
+  tags: [restore]
+
+- name: Fail if backup file not found
+  ansible.builtin.fail:
+    msg: "Backup file not found: {{ backup_file }}"
+  when: not restore_backup_stat.stat.exists
+  tags: [restore]
+
+- name: Create temporary restore directory
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: openoctopus-restore-
+  register: restore_tmpdir
+  tags: [restore]
+
+- name: Extract backup archive
+  ansible.builtin.unarchive:
+    src: "{{ backup_file }}"
+    dest: "{{ restore_tmpdir.path }}"
+    remote_src: true
+  tags: [restore]
+
+- name: Stop OpenOctopus containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ openoctopus_home }}"
+    state: absent
+  tags: [restore]
+
+- name: Restore SQLite database
+  ansible.builtin.command:
+    cmd: >-
+      sqlite3 {{ openoctopus_data_dir }}/openoctopus.db
+      ".restore '{{ restore_tmpdir.path }}/openoctopus.db.bak'"
+  tags: [restore]
+
+- name: Check if sessions backup exists
+  ansible.builtin.stat:
+    path: "{{ restore_tmpdir.path }}/sessions"
+  register: sessions_backup
+  tags: [restore]
+
+- name: Restore JSONL sessions
+  ansible.builtin.copy:
+    src: "{{ restore_tmpdir.path }}/sessions/"
+    dest: "{{ openoctopus_sessions_dir }}/"
+    remote_src: true
+    owner: "{{ openoctopus_user }}"
+    group: "{{ openoctopus_user }}"
+    mode: "0640"
+  when: sessions_backup.stat.exists
+  tags: [restore]
+
+- name: Start OpenOctopus containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ openoctopus_home }}"
+    state: present
+  tags: [restore]
+
+- name: Wait for gateway health check after restore
+  ansible.builtin.uri:
+    url: "http://localhost:{{ openoctopus_http_port }}/healthz"
+    method: GET
+    status_code: 200
+  register: restore_healthcheck
+  retries: 12
+  delay: 5
+  until: restore_healthcheck.status == 200
+  tags: [restore]
+
+- name: Clean up temporary restore directory
+  ansible.builtin.file:
+    path: "{{ restore_tmpdir.path }}"
+    state: absent
+  tags: [restore]
+
+- name: Restore result
+  ansible.builtin.debug:
+    msg: >-
+      Restore completed successfully from {{ backup_file }}.
+      Gateway health check: {{ restore_healthcheck.status }}
+  tags: [restore]

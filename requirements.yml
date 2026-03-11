@@ -1,0 +1,12 @@
+---
+# Ansible Galaxy dependencies for openoctopus-ansible
+
+roles:
+  - name: geerlingguy.docker
+    version: "7.4.1"
+  - name: artis3n.tailscale
+    version: "5.3.0"
+
+collections:
+  - name: community.general
+    version: ">=9.0.0"

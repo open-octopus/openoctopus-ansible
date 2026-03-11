@@ -1,0 +1,33 @@
+---
+# Create OpenOctopus system user and directories
+
+- name: Create system user '{{ openoctopus_user }}'
+  ansible.builtin.user:
+    name: "{{ openoctopus_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ openoctopus_home }}"
+    create_home: false
+    comment: "OpenOctopus service account"
+  tags: [openoctopus, user]
+
+- name: Add openoctopus user to docker group
+  ansible.builtin.user:
+    name: "{{ openoctopus_user }}"
+    groups: docker
+    append: true
+  tags: [openoctopus, user]
+
+- name: Create application directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ openoctopus_user }}"
+    group: "{{ openoctopus_user }}"
+    mode: "0750"
+  loop:
+    - "{{ openoctopus_home }}"
+    - "{{ openoctopus_data_dir }}"
+    - "{{ openoctopus_sessions_dir }}"
+    - "{{ openoctopus_config_dir }}"
+  tags: [openoctopus, user]

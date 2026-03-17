@@ -24,7 +24,7 @@
 
 **openoctopus-ansible** provides [Ansible](https://www.ansible.com/) playbooks for deploying OpenOctopus on your own server. It automates the full setup: Docker containers, Tailscale VPN for secure remote access, firewall hardening, and automated backups.
 
-OpenOctopus is **local-first** by design -- your data stays on your machine.
+OpenOctopus is **local-first** by design — your family data never leaves your home. Phase 2 targets Raspberry Pi as a dedicated home hub device.
 
 ## Prerequisites
 
